@@ -1,0 +1,8 @@
+[
+	{"desc": "Goal 1", "done": true},
+	{"desc": "Goal 2", "done": false},
+	{"desc": "Goal 3", "done": false},
+	{"desc": "Goal 4", "done": false},
+	{"desc": "????", "done": false},
+	{"desc": "Proffit", "done": false}
+]
