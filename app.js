@@ -1,4 +1,9 @@
 (function () {
+	const noop = () => {};
+	const warn = () => {
+		console.error('Should not see this');
+	};
+
 	window.addEventListener('load', () => {
 		document.getElementById('random').addEventListener('click', () => {
 			fetch('https://www.random.org/integers/?num=1&min=1&max=6&col=1&base=10&format=plain&rnd=new')
@@ -6,51 +11,61 @@
 				.then(console.log.bind(console, 'number:'));
 		});
 
-		// fetch('goals.json')
-		// 	.then((res) => res.json())
-		// 	.then((goals) => {
-		// 		const app = document.getElementById('app');
-		// 		app.innerHTML = '<ul></ul>';
+		agent.addEventListener('span-end', async ({ detail: span }) => {
+			console.log('Span: ', span.url, `${(span.end - span.start) >> 0}ms`, span);
+		});
 
-		// 		goals.forEach(({ desc, done }) => {
-		// 			const el = app.children[0].appendChild(document.createElement('li'));
+		fetch('goals.json')
+			.then((res) => res.json())
+			.then((goals) => {
+				const app = document.getElementById('app');
+				app.innerHTML = '<ul></ul>';
 
-		// 			const doneNode = el.appendChild(document.createElement('input'));
-		// 			doneNode.type = 'checkbox';
-		// 			doneNode.checked = done;
+				goals.forEach(({ desc, done }) => {
+					const el = app.children[0].appendChild(document.createElement('li'));
 
-		// 			const descNode = el.appendChild(document.createElement('span'));
-		// 			descNode.innerText = desc;
-		// 		});
-		// 	});
+					const doneNode = el.appendChild(document.createElement('input'));
+					doneNode.type = 'checkbox';
+					doneNode.checked = done;
 
-
-		// fetch('./no-exist.html')
-		// 	.catch((err) => {
-		// 		console.log('request failed:', err);
-		// 	});
-
-
-		// fetch('http-totallyinvalid:#@[oops.com{')
-		// 	.catch((err) => {
-		// 		console.log('request failed:', err);
-		// 	});
+					const descNode = el.appendChild(document.createElement('span'));
+					descNode.innerText = desc;
+				});
+			})
+			.catch(warn);
 
 
-		// fetch('data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==')
-		// 	.then((res) => {
-		// 		return res.text();
-		// 	})
-		// 	.then((body) => {
-		// 		const expecting = 'Hello, World!';
-		// 		if (body !== expecting) {
-		// 			throw new Error(`Expected friendlier response: "${body}" !== "${expecting}"`);
-		// 		}
-		// 	});
+		fetch('./no-exist.html')
+			.catch(warn);
 
-		const REQ_COUNT = 15;
 
-		const diffs = [];
+		fetch('http-totallyinvalid:#@[oops.com{')
+			.then(warn)
+			.catch(noop);
+
+
+		fetch('data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==')
+			.then((res) => {
+				return res.text();
+			})
+			.then((body) => {
+				const expecting = 'Hello, World!';
+				if (body !== expecting) {
+					throw new Error(`Expected friendlier response: "${body}" !== "${expecting}"`);
+				}
+			})
+			.catch(warn);
+
+
+		/*
+		// This tests rapid requests to same exact url to make sure the agent is not
+		// glueless about which span connects to which resTiming
+		const REQ_COUNT = 20;
+
+		const diffs = {
+			span: [],
+			res: [],
+		};
 		const avg = (...nrs) => {
 			if (!nrs.length) {
 				return null;
@@ -60,15 +75,26 @@
 
 		const handleTest = (span, body) => {
 			const spanTime = ((span.end - span.start) >> 0);
+			const resTime = ((span.resTimings.responseEnd - span.resTimings.requestStart) >> 0);
 			const took = parseInt(body.took);
 			const diff = spanTime - took;
-			diffs.push(diff);
-			console.log('Span: ', span.url, `${spanTime - took}ms diff`, diffs.length, span);
-			if (diffs.length === REQ_COUNT) {
+			span.took = took;
+			span.time = spanTime;
+			diffs.span.push(diff);
+			diffs.res.push(resTime - took);
+			console.log('Span: ', span.url, `${spanTime - took}ms diff`, diffs.span.length, span);
+			if (diffs.span.length === REQ_COUNT) {
 				console.log('ALL DONE', {
-					min: Math.min(...diffs),
-					max: Math.max(...diffs),
-					avg: avg(...diffs),
+					min: Math.min(...diffs.span),
+					max: Math.max(...diffs.span),
+					avg: avg(...diffs.span),
+					list: diffs.span,
+				});
+				console.log('ALL DONE RES', {
+					min: Math.min(...diffs.res),
+					max: Math.max(...diffs.res),
+					avg: avg(...diffs.res),
+					list: diffs.res,
 				});
 			}
 		}
@@ -91,5 +117,6 @@
 				.then((res) => res.clone().json())
 				.then(console.log.bind(console, 'rand resp time fetch:'))
 		}
+		*/
 	});
 })();

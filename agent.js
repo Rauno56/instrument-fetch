@@ -1,4 +1,7 @@
 agent = (function () {
+	const DEBUG = false;
+	const log = DEBUG ? console.error : () => {};
+
 	class Agent extends EventTarget {
 		emitSpanStart(span) {
 			this.dispatchEvent(new CustomEvent('span-start', { detail: span }));
@@ -17,28 +20,61 @@ agent = (function () {
 		type: 'resource',
 		buffered: !true,
 	});
+
 	const handlePerformanceEntry = (entry) => {
-		// console.error('PO', entry.entryType, entry.name, entry);
+		// log('PO', entry.entryType, entry.name, entry);
 		if (entry.entryType !== 'resource' || entry.initiatorType !== 'fetch') {
 			return;
 		}
-		const span = unsentSpans.take(entry.name);
+		const span = unsentSpans.take(entry.name, entry);
 		span.resTimings = entry;
 	};
+
 	const toAbsoluteUrl = (url) => {
 		return (new URL(url, window.origin)).toString();
 	};
 
 	const unsentSpans = (() => {
 		const map = new Map();
+
 		return {
-			take: (url, start, end) => {
+			take: (url, entry) => {
+				const { startTime: entryStart, fetchStart, responseEnd: entryEnd } = entry;
 				const spans = map.get(toAbsoluteUrl(url));
+
 				if (!spans || spans.length === 0) {
-					console.error('could not find span for', url);
+					log('could not find span for', url);
 					return null;
 				}
-				// TODO: use start and end to distinguish fetches to same resource
+
+				let found;
+				for (let [key, span] of spans.entries()) {
+					if (span.start <= entryStart && entryEnd <= span.end) {
+						log('found a match', key, span);
+						/*
+							if the already-found span is longer, skip overwriting `found`, because
+							`found` already matches somewhat better to the entry
+						*/
+						if (found && (found.span.end - found.span.start) >= (span.end - span.start)) {
+							log('.. which is not better match');
+							continue;
+						}
+						found = { key, span };
+					}
+				}
+
+				const { span } = found;
+				if ((span.end - span.start) - (entryEnd - entryStart) > 50) {
+					debugger;
+				}
+
+				if (found) {
+					spans.splice(found.key, 1);
+					return found.span;
+				}
+
+				log('falling back to poping', spans[spans.length - 1]);
+
 				return spans.pop();
 			},
 			add: (span) => {
