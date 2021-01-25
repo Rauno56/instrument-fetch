@@ -4,7 +4,7 @@
 
 To-do:
 
-- [ ] make sure instrumentation accepts call signature with `Request` as well.
+- [x] make sure instrumentation accepts call signature with `Request` as well.
 - [x] implement a way to reliably connect `PerformanceResourceTiming`(PRT) to Fetch calls.
 
 Resources:
@@ -25,3 +25,7 @@ Resources:
 - https://www.w3.org/TR/resource-timing-2/
 
 **21.01.25 13:05** The situation seemed worse than it was, when there's a sequence of rapid requests done. I didn't initially think the browser will start to throttel those from such a small number. That actually makes matching PRTs more reliable because there can ever be only a few requests with the same url.
+
+**21.01.25 14:15** Finished implementing `fetch(req: Request)`. `span.options` is empty if the user opts in using defaults. It would be useful and more consistent to always populate `span.options`.
+
+- [ ] make `span.options` reflect default options, if user didn't provide any.

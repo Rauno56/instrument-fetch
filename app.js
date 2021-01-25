@@ -56,6 +56,18 @@
 			})
 			.catch(warn);
 
+		fetch(new Request('https://jsonplaceholder.typicode.com/posts', {
+			method: 'POST',
+			body: JSON.stringify({
+				title: 'foo',
+				body: 'bar',
+				userId: 1,
+			}),
+			headers: {
+				'Content-type': 'application/json; charset=UTF-8',
+			},
+		}))
+			.catch(warn);
 
 		/*
 		// This tests rapid requests to same exact url to make sure the agent is not

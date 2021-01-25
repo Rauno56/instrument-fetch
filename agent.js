@@ -22,12 +22,14 @@ agent = (function () {
 	});
 
 	const handlePerformanceEntry = (entry) => {
-		// log('PO', entry.entryType, entry.name, entry);
+		log('PO', entry.entryType, entry.name, entry);
 		if (entry.entryType !== 'resource' || entry.initiatorType !== 'fetch') {
 			return;
 		}
 		const span = unsentSpans.take(entry.name, entry);
-		span.resTimings = entry;
+		if (span) {
+			span.resTimings = entry;
+		}
 	};
 
 	const toAbsoluteUrl = (url) => {
@@ -52,8 +54,8 @@ agent = (function () {
 					if (span.start <= entryStart && entryEnd <= span.end) {
 						log('found a match', key, span);
 						/*
-							if the already-found span is longer, skip overwriting `found`, because
-							`found` already matches somewhat better to the entry
+							if the already-found span is longer, skip overwriting `found`, because `found`
+							already matches somewhat better to the entry
 						*/
 						if (found && (found.span.end - found.span.start) >= (span.end - span.start)) {
 							log('.. which is not better match');
@@ -79,6 +81,7 @@ agent = (function () {
 			},
 			add: (span) => {
 				const url = toAbsoluteUrl(span.url);
+				log('adding span', url, span);
 
 				if (map.has(url)) {
 					const spans = map.get(url);
@@ -90,10 +93,26 @@ agent = (function () {
 		};
 	})();
 
+	const parseArgs = (url, options) => {
+		/*
+			supports
+			- fetch(url: string, options: object)
+			- fetch(req: Request)
+		*/
+		if (url instanceof Request) {
+			// here options is left as Request, when usually it is PO
+			return [url.url, url];
+		}
+		return [url, options];
+	};
 	const PATCHED = Symbol.for('PATCHED');
 	const originalFetch = window.fetch;
+	/*
+		Using `...args` to make absolutely sure that we pass arguments over
+		to `originaFetch` unchanged.
+	*/
 	const patchedFetch = (...args) => {
-		const [url, options = {}] = args;
+		const [url, options = {}] = parseArgs(...args);
 		const resTimings = {};
 		const span = {
 			url,
