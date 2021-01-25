@@ -19,7 +19,7 @@ agent = (function () {
 	});
 	const handlePerformanceEntry = (entry) => {
 		// console.error('PO', entry.entryType, entry.name, entry);
-		if (entry.entryType !== 'fetch') {
+		if (entry.entryType !== 'resource' || entry.initiatorType !== 'fetch') {
 			return;
 		}
 		const span = unsentSpans.take(entry.name);
