@@ -32,17 +32,13 @@ agent = (function () {
 		}
 	};
 
-	const toAbsoluteUrl = (url) => {
-		return (new URL(url, window.origin)).toString();
-	};
-
 	const unsentSpans = (() => {
 		const map = new Map();
 
 		return {
 			take: (url, entry) => {
 				const { startTime: entryStart, fetchStart, responseEnd: entryEnd } = entry;
-				const spans = map.get(toAbsoluteUrl(url));
+				const spans = map.get(url);
 
 				if (!spans || spans.length === 0) {
 					log('could not find span for', url);
@@ -75,14 +71,13 @@ agent = (function () {
 				return spans.pop();
 			},
 			add: (span) => {
-				const url = toAbsoluteUrl(span.url);
-				log('adding span', url, span);
+				log('adding span', span.url, span);
 
-				if (map.has(url)) {
-					const spans = map.get(url);
+				if (map.has(span.url)) {
+					const spans = map.get(span.url);
 					spans.push(span);
 				} else {
-					map.set(url, [span]);
+					map.set(span.url, [span]);
 				}
 			},
 		};
@@ -93,12 +88,23 @@ agent = (function () {
 			supports
 			- fetch(url: string, options: object)
 			- fetch(req: Request)
+			returns { url: string, request: Request }
 		*/
 		if (url instanceof Request) {
-			// here options is left as Request, when usually it is PO
-			return [url.url, url];
+			return {
+				url: url.url,
+				request: url,
+			};
 		}
-		return [url, options];
+		if (typeof url === 'string' && typeof options === 'object' || options === undefined) {
+			return parseArgs(new Request(url, options || {}));
+		}
+
+		// Unsupported signature
+		return {
+			url,
+			request: new Request(url),
+		};
 	};
 	const PATCHED = Symbol.for('PATCHED');
 	const originalFetch = window.fetch;
@@ -107,11 +113,9 @@ agent = (function () {
 		to `originaFetch` unchanged.
 	*/
 	const patchedFetch = (...args) => {
-		const [url, options = {}] = parseArgs(...args);
 		const resTimings = {};
 		const span = {
-			url,
-			options,
+			...parseArgs(...args),
 			start: performance.now(),
 			resTimings,
 		};

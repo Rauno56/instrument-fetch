@@ -28,4 +28,10 @@ Resources:
 
 **21.01.25 14:15** Finished implementing `fetch(req: Request)`. `span.options` is empty if the user opts in using defaults. It would be useful and more consistent to always populate `span.options`.
 
-- [ ] make `span.options` reflect default options, if user didn't provide any.
+- [x] make `span.options` reflect default options, if user didn't provide any.
+
+**21.01.25 14:28** Since Request constructor makes the url absolute by itself, I could just opt in storing the Request object instead of options and solve the consistency of options as well as making sure the url is always in the same format. Win! Since `options` it's always an instance of `Request`, I will rename this as well.
+
+I did discover that the task specified different interface for the spans, so I need to fix that.
+
+- [ ] make sure span follows the interface in the spec.
