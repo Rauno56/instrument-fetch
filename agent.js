@@ -65,11 +65,6 @@ agent = (function () {
 					}
 				}
 
-				const { span } = found;
-				if ((span.end - span.start) - (entryEnd - entryStart) > 50) {
-					debugger;
-				}
-
 				if (found) {
 					spans.splice(found.key, 1);
 					return found.span;
