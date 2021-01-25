@@ -1,7 +1,14 @@
-(function () {
-	const reportSpan = (span) => {
-		console.log('Span: ', span.url, ((span.end - span.start) >> 0) + 'ms', span);
-	};
+agent = (function () {
+	class Agent extends EventTarget {
+		emitSpanStart(span) {
+			this.dispatchEvent(new CustomEvent('span-start', { detail: span }));
+		}
+		emitSpanEnd(span) {
+			this.dispatchEvent(new CustomEvent('span-end', { detail: span }));
+		}
+	}
+
+	const agent = new Agent();
 
 	const observer = new PerformanceObserver((list, observer) => {
 		list.getEntries().forEach(handlePerformanceEntry);
@@ -11,14 +18,12 @@
 		buffered: !true,
 	});
 	const handlePerformanceEntry = (entry) => {
-		console.error('PO', entry.entryType, entry.name, entry);
+		// console.error('PO', entry.entryType, entry.name, entry);
 		if (entry.entryType !== 'fetch') {
 			return;
 		}
 		const span = unsentSpans.take(entry.name);
 		span.resTimings = entry;
-
-		// reportSpan
 	};
 	const toAbsoluteUrl = (url) => {
 		return (new URL(url, window.origin)).toString();
@@ -61,6 +66,7 @@
 			resTimings,
 		};
 
+		agent.emitSpanStart(span);
 		unsentSpans.add(span);
 
 		return originalFetch(...args)
@@ -75,7 +81,8 @@
 			})
 			.finally(() => {
 				span.end = performance.now();
-				setTimeout(() => reportSpan(span));
+				// Required for PerformanceObserver to finish it's (micro)task
+				setTimeout(() => agent.emitSpanEnd(span));
 			});
 	};
 	patchedFetch[PATCHED] = true;
@@ -83,4 +90,6 @@
 	if (window.fetch && !window.fetch[PATCHED]) {
 		window.fetch = patchedFetch;
 	}
+
+	return agent;
 })();
