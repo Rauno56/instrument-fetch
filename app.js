@@ -12,7 +12,7 @@
 		});
 
 		agent.addEventListener('span-end', async ({ detail: span }) => {
-			console.log('Span: ', span.url, `${(span.end - span.start) >> 0}ms`, span);
+			console.log('Span: ', span.data.url, `${(span.end - span.start) >> 0}ms`, span);
 		});
 
 		fetch('goals.json')

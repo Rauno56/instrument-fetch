@@ -28,7 +28,7 @@ agent = (function () {
 		}
 		const span = unsentSpans.take(entry.name, entry);
 		if (span) {
-			span.resTimings = entry;
+			span.data.resTimings = entry;
 		}
 	};
 
@@ -113,24 +113,25 @@ agent = (function () {
 		to `originaFetch` unchanged.
 	*/
 	const patchedFetch = (...args) => {
-		const resTimings = {};
 		const span = {
-			...parseArgs(...args),
 			start: performance.now(),
-			resTimings,
+			data: {
+				...parseArgs(...args),
+			},
 		};
+		span.data.method = span.data.request && span.data.request.method;
 
 		agent.emitSpanStart(span);
 		unsentSpans.add(span);
 
 		return originalFetch(...args)
 			.then((result) => {
-				span.status = result.status;
-				span.result = result;
+				span.data.status = result.status;
+				span.data.result = result;
 				return result;
 			})
 			.catch((err) => {
-				span.error = err;
+				span.data.error = err;
 				return Promise.reject(err);
 			})
 			.finally(() => {

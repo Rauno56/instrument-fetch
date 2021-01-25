@@ -34,4 +34,4 @@ Resources:
 
 I did discover that the task specified different interface for the spans, so I need to fix that.
 
-- [ ] make sure span follows the interface in the spec.
+- [x] make sure span follows the interface in the spec.
