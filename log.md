@@ -35,3 +35,11 @@ Resources:
 I did discover that the task specified different interface for the spans, so I need to fix that.
 
 - [x] make sure span follows the interface in the spec.
+
+**21.01.25 14:52** I think I'll stop here for now since the initial requirements are fullfilled.
+
+- [x] Capture fetch requests;
+- [x] Match resource timings;
+- [x] Is not perfect.
+
+If I would continue, my next step would probably be to define a Span class to clean up the implementation and create some structure around the data and test how CORS preflight requests behave.
