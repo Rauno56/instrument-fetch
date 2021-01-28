@@ -71,13 +71,13 @@ agent = (function () {
 				return spans.pop();
 			},
 			add: (span) => {
-				log('adding span', span.url, span);
+				log('adding span', span.data.url, span);
 
-				if (map.has(span.url)) {
-					const spans = map.get(span.url);
+				if (map.has(span.data.url)) {
+					const spans = map.get(span.data.url);
 					spans.push(span);
 				} else {
-					map.set(span.url, [span]);
+					map.set(span.data.url, [span]);
 				}
 			},
 		};
